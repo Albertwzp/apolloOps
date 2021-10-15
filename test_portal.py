@@ -1,3 +1,7 @@
+#! /bin/env python3
+import sys
+sys.path.append("./")
+import esOps
 if __name__ == '__main__':
     #current = ApolloOps(portal_server="http://192.168.56.10:30001", cookie="NG_TRANSLATE_LANG_KEY=zh-CN; JSESSIONID=6FD8FF5D9B39CC57A916CF02C173845B")
     #remote = ApolloOps(portal_server="https://apollo-offline-wyc.xxx.cn", cookie="NG_TRANSLATE_LANG_KEY=zh-CN; JSESSIONID=590305E409F8B97DCB500CC0E17F5956")
