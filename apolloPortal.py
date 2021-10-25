@@ -28,7 +28,7 @@ def request_get(url, headers):
             data_s = json.loads(data)
             res_j = res.json()
             #print("res: %s, data: %s, data_s: %s res_j: %s" % (type(res), type(data), type(data_s), type(res_j)))
-            print(data_s)
+            #print(data_s)
             return data_s
         else:
             print("data: nil")
@@ -43,15 +43,28 @@ def request_post(url, headers, body):
             print("POST FAIL")
         #data = json.dumps(data)
         #print(res.json())
-        
-    
+
+def request_put(url, headers, body):
+        print("[PUT]---url: %s,\t headers: %s,\t body: %s" %(url, headers, body))
+        en_body = body.encode('utf-8')
+        res = requests.post(url, headers=headers, data=en_body)
+        if res.status_code == 200:
+            print("PUT Success")
+        else:
+            print("PUT FAIL")        
+
+def env_c(env, cls):
+    return env.lower() + cls[-1]
+
 class ApolloOps(object):
-    def __init__(self, config_server='localhost:30005', portal_server='localhost:30001', user='apollo', password='admin', cookie=''):
+    def __init__(self, config_server='localhost:30005', portal_server='localhost:30001', user='apollo', password='admin', cookie='',rep=True):
         self.config_server = config_server
         self.portal_server = portal_server
         self.user = user
         self.password = password
         self.cookie = cookie
+        self.rep = rep
+        self.headers = {"Cookie": cookie, 'Content-Type': "application/json;charset=UTF-8"}
 	#get_cookie(portal_server)
 
     def login(self):
@@ -97,8 +110,13 @@ class ApolloOps(object):
                 namespaces.append(i["baseInfo"]["namespaceName"])
             return namespaces
         elif xxx == 'properties':
-            url = '{}/apps/{}/envs/{}/clusters/{}/namespaces/{}'.format(self.portal_server, appId, envName, clusterName, namespaceName)
+            url = '{}/apps/{}/envs/{}/clusters/{}/namespaces/{}/releases/active?page=0&size=1'.format(self.portal_server, appId, envName, clusterName, namespaceName)
             ret = request_get(url, headers)
+            if ret:
+                aws = eval(ret[0]['configurations'])
+            else:
+                aws = {}
+            return  aws
             
 
         elif xxx == 'envclusters':
@@ -110,6 +128,7 @@ class ApolloOps(object):
         elif xxx == 'nameSpaceName':
             #url = '{}/openapi/v1/envs/{}/apps/{}/clusters/{}/namespaces/{}'.format(self.portal_server, envName, appId, clusterName, namespaceName)
             url = '{}/apps/{}/envs/{}/clusters/{}/namespaces/{}'.format(self.portal_server, appId, envName, clusterName, namespaceName)
+
         else:
             print("get error")
 
@@ -135,14 +154,27 @@ class ApolloOps(object):
             body = "[{{'env': '{}', 'namespace': {{'appId': '{}', 'clusterName': '{}', 'namespaceName': '{}'}}}}]".format(envName, appId, clusterName, namespaceName)
             print(type(body))
             ret = request_post(url, headers, body)
-        elif xxx == 'release':
-            url = '{}/apps/{}/envs/{}/clusters/{}/namespaces/{}/release'.format(self.portal_server, appId, envName, clusterName, namespaceName)
         else:
             print("post error")
 
+    def post_item(self, *, appId='parent', envName='FAT', clusterName='default', namespaceName='application', k="", v=""):
+        url = '{}/apps/{}/envs/{}/clusters/{}/namespaces/{}/item'.format(self.portal_server, appId, envName, clusterName, namespaceName)
+        body = "{{'tableViewOperType': 'create', 'key': '{}', 'value': '{}', 'addItemBtnDisabled': true}}".format(k, v)
+        print(body)
+        ret = request_post(url, self.headers, body)
+
+    def post_release(self, *, appId='parent', envName='FAT', clusterName='default', namespaceName='application'):
+        url = '{}/apps/{}/envs/{}/clusters/{}/namespaces/{}/releases'.format(self.portal_server, appId, envName, clusterName, namespaceName)
+        body = "{'releaseTitle': '', 'releaseComment': '', 'isEmergencyPublish': false}"
+        ret = request_post(url, self.headers, body)
+
     def put_xxx(self, xxx, *, appId, envName, clusterName, namespaceName):
+        headers = {"Cookie": self.cookie, 'Content-Type': "application/json;charset=UTF-8"}
         if xxx == 'item':
             url = '{}/apps/{}/envs/{}/clusters/{}/namespaces/{}/items'.format(self.portal_server, appId, envName, clusterName, namespaceName)
+            body = '{"configText": "fd = 13\nbs = 15\nwx = 8\nys = 3","namespaceId": 4278,"format": "properties"}'
+            ret = request_put(url, headers, body)
+            return ret
 
 
     def get_values(self, *, appId, cluster='default', ns='application', client='locahost'):
@@ -156,6 +188,8 @@ class ApolloOps(object):
             print("values: no data")
         #print(res.json())
 
+
+
     def sync_app(self, *, remote=None):
         apps = remote.get_xxx('apps')
         for app in apps:
@@ -164,7 +198,7 @@ class ApolloOps(object):
 
     def sync_cls(self, *, remote=None, srcEnv='', dstEnv='', srcCls='', dstCls=[] ):
         apps = remote.get_xxx('apps')
-        for app in apps:
+        for app in apps[:1]:
             for cls in dstCls:
                 print('Create cls: %s' % cls)
                 self.post_xxx('clusterName', appId=app["appId"], envName=dstEnv, clusterName=cls)
@@ -179,5 +213,26 @@ class ApolloOps(object):
                 for ns in nss:
                     print('Create ns: %s' % ns)
                     self.post_xxx('nameSpace', appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns)
+                    #time.sleep(10)
+
+    def sync_property(self, *, remote=None, srcEnv='', dstEnv='', srcCls='', dstCls=[] ):
+        apps = remote.get_xxx('apps')
+        for app in apps[1:]:
+            nss = remote.get_xxx('nameSpaces', appId=app["appId"], envName=srcEnv, clusterName=srcCls)
+            for cls in dstCls:
+                senv_path = env_c(srcEnv, srcCls)
+                denv_path = env_c(dstEnv, cls)
+                print('Create cls: %s' % cls)
+                self.post_xxx('clusterName', appId=app["appId"], envName=dstEnv, clusterName=cls)
+                for ns in nss:
+                    print('Create ns: %s' % ns)
+                    self.post_xxx('nameSpace', appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns)
+                    properties = self.get_xxx('properties', appId=app["appId"], envName=srcEnv, clusterName=srcCls, namespaceName=ns)
+                    for k,v in properties.items():
+                        v = str(v)
+                        if senv_path in v:
+                            v = v.replace(senv_path, denv_path)
+                        self.post_item(appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns, k=k, v=v)
+                    self.post_release(appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns)
                     #time.sleep(10)
 
