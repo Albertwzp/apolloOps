@@ -3,14 +3,13 @@ import sys
 sys.path.append("./")
 from apolloPortal import ApolloOps
 if __name__ == '__main__':
-    current = ApolloOps(portal_server="https://apollo-offline-wyc.wsecar.cn", cookie="NG_TRANSLATE_LANG_KEY=zh-CN; JSESSIONID=16107E41528C631658FBD4E34D846FCB")
-    ops = ApolloOps(portal_server="https://apollo-offline-bmpl.wsecar.cn", cookie="NG_TRANSLATE_LANG_KEY=zh-CN; JSESSIONID=C0D0B6F126BF3EEE2D0C99D3CDC5E055")
-#    remote = ApolloOps(portal_server="https://apollo-offline-bmpl.xxx.cn", cookie="NG_TRANSLATE_LANG_KEY=zh-CN; JSESSIONID=41803E009F5F58EE49B8FEC5DF7E581E")
+    current = ApolloOps(portal_server="https://apollo-offline-xxxx.xx.cn", cookie="NG_TRANSLATE_LANG_KEY=zh-CN; JSESSIONID=95CD621B9CDFB1141D2E17F9BADBFB75")
+#    ops = ApolloOps(portal_server="https://apollo-offline-xxxx.xx.cn", cookie="NG_TRANSLATE_LANG_KEY=zh-CN; JSESSIONID=C0D0B6F126BF3EEE2D0C99D3CDC5E055")
+#    remote = ApolloOps(portal_server="https://apollo-offline-xxxx.xxx.cn", cookie="NG_TRANSLATE_LANG_KEY=zh-CN; JSESSIONID=41803E009F5F58EE49B8FEC5DF7E581E")
     #current.sync_app(remote=remote)
-    #current.sync_cls(remote=remote, srcEnv='FAT', dstEnv='PRO', srcCls='Cluster-02', dstCls=['Cluster-01', 'Cluster-02'])
-    #current.sync_ns(remote=remote, srcEnv='FAT', dstEnv='PRO', srcCls='Cluster-02', dstCls=['Cluster-01', 'Cluster-02'])
     #current.sync_cls(remote=remote, srcEnv='UAT', dstEnv='UAT', srcCls='Cluster-00', dstCls=['Cluster-01'])
     current.sync_property(remote=current, srcEnv='FAT', dstEnv='FAT', srcCls='Cluster-04', dstCls=['Cluster-05'])
+#    current.get_all_propertys(env='FAT', cls='Cluster-05')
     #ops.login()
 
         

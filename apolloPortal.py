@@ -18,7 +18,7 @@ def get_cookie(url, username, password):
     return cookie
 
 def request_get(url, headers):
-        print("[GET]---url: %s,\t headers: %s" %(url, headers))
+        #print("[GET]---url: %s,\t headers: %s" %(url, headers))
         res = requests.get(url, headers=headers)
         #if res.ok:
         if res.status_code == 200:
@@ -34,7 +34,7 @@ def request_get(url, headers):
             print("data: nil")
 
 def request_post(url, headers, body):
-        print("[POST]---url: %s,\t headers: %s,\t body: %s" %(url, headers, body))
+        #print("[POST]---url: %s,\t headers: %s,\t body: %s" %(url, headers, body))
         en_body = body.encode('utf-8')
         res = requests.post(url, headers=headers, data=en_body)
         if res.status_code == 200:
@@ -81,8 +81,8 @@ class ApolloOps(object):
         print(url)
         loginx = requests.post(url, data=json.dumps(payload), headers=headers)
         #loginx = requests.Session()
-	#loginx.headers.update(headers)
-	#loginx.post(url, data=payload)
+	    #loginx.headers.update(headers)
+	    #loginx.post(url, data=payload)
         if loginx.status_code == 302:
             print('login success')
         else:
@@ -176,20 +176,6 @@ class ApolloOps(object):
             ret = request_put(url, headers, body)
             return ret
 
-
-    def get_values(self, *, appId, cluster='default', ns='application', client='locahost'):
-        url = '{}/configfiles/json/{}/{}/{}?ip={}'.format(self.config_server, appId, cluster, ns, client)
-        print(url)
-        values = requests.get(url)
-        if values.ok:
-            data = values.json()
-            print(data)
-        else:
-            print("values: no data")
-        #print(res.json())
-
-
-
     def sync_app(self, *, remote=None):
         apps = remote.get_xxx('apps')
         for app in apps:
@@ -208,8 +194,8 @@ class ApolloOps(object):
         for app in apps:
             nss = remote.get_xxx('nameSpaces', appId=app["appId"], envName=srcEnv, clusterName=srcCls)
             for cls in dstCls:
-                #print('Create cls: %s' % cls)
-                #self.post_xxx('clusterName', appId=app, envName=dstEnv, clusterName=cls)
+                print('Create cls: %s' % cls)
+                self.post_xxx('clusterName', appId=app, envName=dstEnv, clusterName=cls)
                 for ns in nss:
                     print('Create ns: %s' % ns)
                     self.post_xxx('nameSpace', appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns)
@@ -217,22 +203,32 @@ class ApolloOps(object):
 
     def sync_property(self, *, remote=None, srcEnv='', dstEnv='', srcCls='', dstCls=[] ):
         apps = remote.get_xxx('apps')
-        for app in apps[1:]:
+        sub = {}
+        for app in apps:
             nss = remote.get_xxx('nameSpaces', appId=app["appId"], envName=srcEnv, clusterName=srcCls)
             for cls in dstCls:
-                senv_path = env_c(srcEnv, srcCls)
-                denv_path = env_c(dstEnv, cls)
+                #senv_path = env_c(srcEnv, srcCls)
+                #denv_path = env_c(dstEnv, cls)
                 print('Create cls: %s' % cls)
-                self.post_xxx('clusterName', appId=app["appId"], envName=dstEnv, clusterName=cls)
+                #self.post_xxx('clusterName', appId=app["appId"], envName=dstEnv, clusterName=cls)
                 for ns in nss:
                     print('Create ns: %s' % ns)
-                    self.post_xxx('nameSpace', appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns)
+                    #self.post_xxx('nameSpace', appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns)
+                    print(app, cls)
                     properties = self.get_xxx('properties', appId=app["appId"], envName=srcEnv, clusterName=srcCls, namespaceName=ns)
-                    for k,v in properties.items():
-                        v = str(v)
-                        if senv_path in v:
-                            v = v.replace(senv_path, denv_path)
-                        self.post_item(appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns, k=k, v=v)
-                    self.post_release(appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns)
+                    print(properties)
+                    # for k,v in properties.items():
+                    #     v = str(v)
+                    #     if senv_path in v:
+                    #         v = v.replace(senv_path, denv_path)
+                    #     self.post_item(appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns, k=k, v=v)
+                    # self.post_release(appId=app["appId"], envName=dstEnv, clusterName=cls, namespaceName=ns)
                     #time.sleep(10)
 
+    def get_all_propertys(self, *, env='', cls=''):
+        apps = self.get_xxx('apps')
+        for app in apps:
+            nss = self.get_xxx('nameSpaces', appId=app["appId"], envName=env, clusterName=cls)
+            for ns in nss:
+                properties = self.get_xxx('properties', appId=app["appId"], envName=env, clusterName=cls, namespaceName=ns)
+                print(properties)
